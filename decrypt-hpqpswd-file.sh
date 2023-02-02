@@ -1,5 +1,8 @@
 #!/bin/bash
 
+## Based on work by GitHub user "serializingme":
+##   https://github.com/serializingme/hpqpswdd/blob/main/Program.cs
+
 ## Treat unset variables as an error when substituting.
 set -u
 
