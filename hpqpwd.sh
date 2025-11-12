@@ -19,8 +19,8 @@ args=$(getopt -n "$0" -o + -l 'decrypt,encrypt' -- "$@")
 eval "set -- $args"
 while [ $# -ne 0 ]; do
   case "$1" in
-    --decrypt|-d)    decrypt="true";   shift ;;
-    --encrypt|-e)    decrypt="false";  shift ;;
+    --decrypt)    decrypt="true";   shift ;;
+    --encrypt)    decrypt="false";  shift ;;
     --) shift; break ;;
     *)  break ;;
   esac
@@ -55,12 +55,21 @@ if [ ${decrypt} = true ]; then
     status=none\
     | openssl enc -d -"${CIPHER}" -K "${KEY}" -iv "${IV}"
   else
-    encryptedpassword=$(IFS=$'\n' read -r -p "Input password: " password 
-    echo -n "$password" > "/tmp/rawpassword.tmp"
-    echo -n "$password" | openssl enc -"${CIPHER}" -K "${KEY}" -iv "${IV}")
-    passwordsize=${#encryptedpassword}
+    u16encpassword=$(IFS=$'\n' read -r -n 32 -p "Input password: " password 
+    echo -n $password | iconv -f UTF-8 -t UTF-16LE | openssl enc -"${CIPHER}" -K "${KEY}" -iv "${IV}")
+    passwordsize=${#u16encpassword}
+    if [ $passwordsize -le 16 ]; then
+      passwordsize=16
+    elif [ $passwordsize -gt 16 ] && [ $passwordsize -lt 32 ]; then
+      passwordsize=32
+    elif [ $passwordsize -gt 32 ] && [ $passwordsize -lt 48 ]; then
+      passwordsize=48
+    elif [ $passwordsize -gt 48 ] && [ $passwordsize -lt 64 ]; then
+      passwordsize=64
+    elif [ $passwordsize -gt 64 ] && [ $passwordsize -lt 80 ]; then
+      passwordsize=80
+    fi
     hexsize=$(printf "%02X" "$passwordsize")
     printf "${MAGIC_VALUE}\x$hexsize\x00" > "${TARGETFILE}"
-    $(iconv -f UTF-8 -t UTF-16LE "/tmp/rawpassword.tmp"| openssl enc -"${CIPHER}" -K "${KEY}" -iv "${IV}" >> "${TARGETFILE}")
-    rm "/tmp/rawpassword.tmp"
+    echo -n "${u16encpassword}" >> "${TARGETFILE}"
 fi
