@@ -39,11 +39,10 @@ if [ ${decrypt} = true ]; then
     count=8\
     status=none
   )"
-  if [ "${MAGIC_VALUE}" != "${MAGIC_VALUE_IN_FILE}" ]
-    then
-      echo "Unexpected magic value. Expected '${MAGIC_VALUE}', but got '${MAGIC_VALUE_IN_FILE}'." 1>&2
-      exit 1
-    fi
+  if [ "${MAGIC_VALUE}" != "${MAGIC_VALUE_IN_FILE}" ]; then
+    echo "Unexpected magic value. Expected '${MAGIC_VALUE}', but got '${MAGIC_VALUE_IN_FILE}'." 1>&2
+    exit 1
+  fi
 
   ## Decrypt the encrypted file.
   dd\
@@ -54,22 +53,22 @@ if [ ${decrypt} = true ]; then
     bs=1\
     status=none\
     | openssl enc -d -"${CIPHER}" -K "${KEY}" -iv "${IV}"
-  else
-    u16encpassword=$(IFS=$'\n' read -r -n 32 -p "Input password: " password 
-    echo -n $password | iconv -f UTF-8 -t UTF-16LE | openssl enc -"${CIPHER}" -K "${KEY}" -iv "${IV}")
-    passwordsize=${#u16encpassword}
-    if [ $passwordsize -le 16 ]; then
-      passwordsize=16
-    elif [ $passwordsize -gt 16 ] && [ $passwordsize -lt 32 ]; then
-      passwordsize=32
-    elif [ $passwordsize -gt 32 ] && [ $passwordsize -lt 48 ]; then
-      passwordsize=48
-    elif [ $passwordsize -gt 48 ] && [ $passwordsize -lt 64 ]; then
-      passwordsize=64
-    elif [ $passwordsize -gt 64 ] && [ $passwordsize -lt 80 ]; then
-      passwordsize=80
-    fi
-    hexsize=$(printf "%02X" "$passwordsize")
-    printf "${MAGIC_VALUE}\x$hexsize\x00" > "${TARGETFILE}"
-    echo -n "${u16encpassword}" >> "${TARGETFILE}"
+else
+  u16encpassword=$(IFS=$'\n' read -r -n 32 -p "Input password: " password 
+  echo -n $password | iconv -f UTF-8 -t UTF-16LE | openssl enc -"${CIPHER}" -K "${KEY}" -iv "${IV}")
+  passwordsize=${#u16encpassword}
+  if [ $passwordsize -le 16 ]; then
+    passwordsize=16
+  elif [ $passwordsize -gt 16 ] && [ $passwordsize -lt 32 ]; then
+    passwordsize=32
+  elif [ $passwordsize -gt 32 ] && [ $passwordsize -lt 48 ]; then
+    passwordsize=48
+  elif [ $passwordsize -gt 48 ] && [ $passwordsize -lt 64 ]; then
+    passwordsize=64
+  elif [ $passwordsize -gt 64 ] && [ $passwordsize -lt 80 ]; then
+    passwordsize=80
+  fi
+  hexsize=$(printf "%02X" "$passwordsize")
+  printf "${MAGIC_VALUE}\x$hexsize\x00" > "${TARGETFILE}"
+  echo -n "${u16encpassword}" >> "${TARGETFILE}"
 fi
